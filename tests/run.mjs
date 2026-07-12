@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { createAria2Adapter, createQbittorrentAdapter, createSynologyAdapter, createTransmissionAdapter } from '../src/adapters/index.mjs';
 import { createDownloadBridge } from '../src/core/bridge.mjs';
 import { normalizeOptions } from '../src/core/config.mjs';
-import { classifyResource, providerSupportsType } from '../src/core/resources.mjs';
+import { classifyResource, createDownloadTask, providerSupportsType } from '../src/core/resources.mjs';
 
 const tests = [];
 
@@ -149,6 +149,71 @@ test('bridge dry-run filters DDYS sources by target capability', async () => {
   const result = await bridge.push('demo', { all: true, dryRun: true });
   assert.equal(result.tasks.length, 1);
   assert.equal(result.tasks[0].type, 'magnet');
+});
+
+test('bridge keeps string false booleans false and normalizes string tags', async () => {
+  const task = createDownloadTask(
+    { url: 'magnet:?xt=urn:btih:abc', name: 'Demo' },
+    { name: 'qb', provider: 'qbittorrent', tags: ['target'], paused: true, sequential: true, firstLastPiece: true },
+    {
+      tags: 'ddys,manual',
+      paused: 'false',
+      sequential: 'false',
+      firstLastPiece: 'false',
+      headers: 'Referer: https://ddys.io'
+    }
+  );
+  assert.deepEqual(task.tags, ['ddys', 'manual']);
+  assert.equal(task.paused, false);
+  assert.equal(task.sequential, false);
+  assert.equal(task.firstLastPiece, false);
+  assert.deepEqual(task.headers, { Referer: 'https://ddys.io' });
+});
+
+test('DDYS grouped source arrays are expanded instead of dropped', async () => {
+  const bridge = createDownloadBridge({
+    enableCache: false,
+    targets: {
+      aria: {
+        provider: 'aria2',
+        baseUrl: 'http://aria2/jsonrpc'
+      }
+    },
+    target: 'aria'
+  }, { fetch: fakeFetch(async (url) => {
+    const text = String(url);
+    if (text.includes('/movies/grouped/sources')) {
+      return jsonResponse({ data: [
+        { name: 'Line A', items: [{ name: 'EP01', url: 'magnet:?xt=urn:btih:aaa' }] },
+        { title: 'Line B', resources: [{ label: 'EP02', link: 'https://example.com/ep02.mkv' }] }
+      ] });
+    }
+    if (text.includes('/movies/grouped/related')) return jsonResponse({ data: [] });
+    if (text.includes('/movies/grouped')) return jsonResponse({ data: { slug: 'grouped', title: 'Grouped Movie' } });
+    return jsonResponse({ data: [] });
+  }) });
+  const result = await bridge.resources('grouped', { all: true });
+  assert.equal(result.allResources.length, 2);
+  assert.equal(result.allResources[0].groupName, 'Line A');
+  assert.equal(result.allResources[1].groupName, 'Line B');
+  assert.equal(result.resources.length, 2);
+});
+
+test('string false deleteFiles remains false for downloader adapters', async () => {
+  const calls = [];
+  const adapter = createTransmissionAdapter({
+    name: 'tr',
+    provider: 'transmission',
+    baseUrl: 'http://tr/transmission/rpc',
+    deleteFiles: true,
+    timeoutSeconds: 5,
+    transmissionRpcStyle: 'hyphen'
+  }, { fetch: fakeFetch(async (url, init) => {
+    calls.push(JSON.parse(init.body));
+    return jsonResponse({ result: 'success', arguments: {} });
+  }) });
+  await adapter.remove('7', { deleteFiles: 'false' });
+  assert.equal(calls[0].arguments['delete-local-data'], false);
 });
 
 for (const entry of tests) {

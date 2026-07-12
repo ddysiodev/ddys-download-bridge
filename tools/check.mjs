@@ -70,7 +70,7 @@ async function main() {
 
   const pkg = JSON.parse(await read('package.json'));
   assert(pkg.name === 'ddys-download-bridge', 'package name mismatch.');
-  assert(pkg.version === '0.1.0', 'package version mismatch.');
+  assert(pkg.version === '0.1.1', 'package version mismatch.');
   assert(pkg.type === 'module', 'package must be ESM.');
   assert(pkg.bin && pkg.bin['ddys-download-bridge'], 'CLI bin missing.');
   assert(pkg.private === true, 'package must remain private until npm publishing is requested.');

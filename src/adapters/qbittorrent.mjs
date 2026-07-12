@@ -1,4 +1,4 @@
-import { createTimeoutFetch, formBody, joinUrl, readTextResponse, splitIds } from './common.mjs';
+import { boolOption, createTimeoutFetch, formBody, joinUrl, readTextResponse, splitIds } from './common.mjs';
 
 const PROVIDER = 'qbittorrent';
 
@@ -74,7 +74,7 @@ export function createQbittorrentAdapter(target, runtime = {}) {
     const response = await request('/api/v2/torrents/delete', {
       method: 'POST',
       headers: { 'content-type': 'application/x-www-form-urlencoded' },
-      body: formBody({ hashes: splitIds(ids).join('|'), deleteFiles: Boolean(options.deleteFiles || target.deleteFiles) }),
+      body: formBody({ hashes: splitIds(ids).join('|'), deleteFiles: boolOption(options.deleteFiles, target.deleteFiles) }),
       signal
     });
     await readTextResponse(response, PROVIDER);

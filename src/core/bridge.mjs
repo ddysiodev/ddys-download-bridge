@@ -1,6 +1,6 @@
 import { createDownloadAdapter } from '../adapters/index.mjs';
 import { createDdysClient } from './client.mjs';
-import { describePublicOptions, normalizeOptions } from './config.mjs';
+import { describePublicOptions, normalizeOptions, toBool } from './config.mjs';
 import { createDownloadTask, filterResources, flattenSourceGroups, normalizeResource, providerSupportsType } from './resources.mjs';
 import { sendWebhook } from './notify.mjs';
 
@@ -57,7 +57,8 @@ export function createDownloadBridge(options = {}, runtime = {}) {
     const target = getTarget(opts.target || settings.target);
     const resource = normalizeResource({ url, name: opts.name });
     resource.supported = providerSupportsType(target.provider, resource.type);
-    if (!resource.supported && !opts.includeUnsupported && !settings.includeUnsupported) {
+    const includeUnsupported = toBool(opts.includeUnsupported, settings.includeUnsupported);
+    if (!resource.supported && !includeUnsupported) {
       throw new Error(`${target.provider} does not support ${resource.type || 'this'} resource: ${resource.url}`);
     }
     const task = createDownloadTask(resource, target, opts);
@@ -71,7 +72,7 @@ export function createDownloadBridge(options = {}, runtime = {}) {
   async function push(slug, opts = {}, signal) {
     const target = getTarget(opts.target || settings.target);
     const plan = await resources(slug, { ...opts, target: target.name }, signal);
-    const selected = opts.all ? plan.resources : plan.resources.slice(0, Number(opts.limit || 1));
+    const selected = toBool(opts.all, false) ? plan.resources : plan.resources.slice(0, Number(opts.limit || 1));
     if (selected.length === 0) {
       return { ok: false, target: publicTarget(target), movie: plan.movie, added: [], skipped: plan.allResources.length, message: 'No matching downloadable resources.' };
     }

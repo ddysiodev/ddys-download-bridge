@@ -1,6 +1,6 @@
 {
   "name": "ddys-download-bridge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Download bridge for pushing DDYS resources to qBittorrent, aria2, Transmission, and Synology Download Station.",
   "type": "module",
   "private": true,

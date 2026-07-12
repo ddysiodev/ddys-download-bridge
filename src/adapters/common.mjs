@@ -82,6 +82,15 @@ export function formBody(value) {
   return body;
 }
 
+export function boolOption(value, fallback = false) {
+  if (value === undefined || value === null || value === '') return Boolean(fallback);
+  if (typeof value === 'boolean') return value;
+  const text = String(value).trim().toLowerCase();
+  if (['1', 'true', 'yes', 'y', 'on'].includes(text)) return true;
+  if (['0', 'false', 'no', 'n', 'off'].includes(text)) return false;
+  return Boolean(fallback);
+}
+
 export function splitIds(value) {
   if (Array.isArray(value)) return value.map(String).map((item) => item.trim()).filter(Boolean);
   return String(value || '').split(',').map((item) => item.trim()).filter(Boolean);

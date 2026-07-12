@@ -2,7 +2,7 @@
 import fs from 'node:fs/promises';
 import process from 'node:process';
 import { createDownloadBridge } from '../src/core/bridge.mjs';
-import { describePublicOptions, normalizeOptions, optionsFromEnv, VERSION } from '../src/core/config.mjs';
+import { describePublicOptions, normalizeOptions, optionsFromEnv, toBool, VERSION } from '../src/core/config.mjs';
 import { startNodeServer } from '../src/core/http.mjs';
 
 main().catch((error) => {
@@ -223,7 +223,7 @@ function parseArgs(argv) {
       'help', 'dryRun', 'all', 'paused', 'sequential', 'firstLastPiece', 'deleteFiles',
       'continueOnError', 'includeUnsupported', 'directOnly', 'dedupe'
     ].includes(name)) {
-      options[name] = true;
+      options[name] = inlineValue === undefined ? true : toBool(inlineValue, true);
       continue;
     }
     const value = inlineValue !== undefined ? inlineValue : argv[++index];

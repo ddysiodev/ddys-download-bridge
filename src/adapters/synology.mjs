@@ -1,4 +1,4 @@
-import { createTimeoutFetch, formBody, joinUrl, readJsonResponse, splitIds } from './common.mjs';
+import { boolOption, createTimeoutFetch, formBody, joinUrl, readJsonResponse, splitIds } from './common.mjs';
 
 const PROVIDER = 'synology';
 
@@ -82,7 +82,7 @@ export function createSynologyAdapter(target, runtime = {}) {
   }
 
   async function remove(ids, options = {}, signal) {
-    await task('delete', { id: splitIds(ids).join(','), force_complete: Boolean(options.deleteFiles || target.deleteFiles) }, signal, true);
+    await task('delete', { id: splitIds(ids).join(','), force_complete: boolOption(options.deleteFiles, target.deleteFiles) }, signal, true);
     return { ok: true, provider: PROVIDER, ids: splitIds(ids) };
   }
 

@@ -1,4 +1,4 @@
-import { normalizeResourceType } from './config.mjs';
+import { normalizeResourceType, toBool, toList } from './config.mjs';
 
 const directMediaPattern = /\.(m3u8|mp4|m4v|mkv|mov|flv|avi|ts|webm|mpd|iso)(\?|#|$)/iu;
 const torrentPattern = /\.torrent(\?|#|$)/iu;
@@ -40,9 +40,9 @@ export function normalizeResource(resource, context = {}) {
     return normalizeResource({ url: resource }, context);
   }
   const input = resource && typeof resource === 'object' ? resource : {};
-  const url = firstString(input, 'url', 'link', 'href', 'play_url', 'download_url', 'magnet', 'ed2k');
+  const url = firstString(input, 'url', 'link', 'href', 'src', 'value', 'file', 'path', 'play_url', 'download_url', 'magnet', 'ed2k');
   const type = classifyResource(url);
-  const name = firstString(input, 'name', 'title', 'label', 'episode', 'quality', 'format') || context.title || 'DDYS resource';
+  const name = firstString(input, 'name', 'title', 'label', 'text', 'episode', 'quality', 'format') || context.title || 'DDYS resource';
   const headers = normalizeHeaders(input.headers || input.header || context.headers);
   return {
     id: firstString(input, 'id', 'hash', 'gid') || stableId(`${context.slug || ''}|${context.groupName || ''}|${name}|${url}`),
@@ -80,9 +80,9 @@ export function filterResources(resources = [], options = {}) {
   const requestedType = normalizeResourceType(options.type || options.resourceType || 'downloadable');
   const indexes = normalizeIndexes(options.indexes ?? options.index);
   const limit = Number.isFinite(Number(options.limit)) ? Math.max(1, Number(options.limit)) : 0;
-  const includeUnsupported = Boolean(options.includeUnsupported);
-  const directOnly = Boolean(options.directOnly);
-  const dedupe = options.dedupe !== false;
+  const includeUnsupported = toBool(options.includeUnsupported, false);
+  const directOnly = toBool(options.directOnly, false);
+  const dedupe = toBool(options.dedupe, true);
   const seen = new Set();
   const out = [];
 
@@ -113,11 +113,11 @@ export function createDownloadTask(resource, target, options = {}) {
     target: target.name,
     savePath: options.savePath || target.savePath,
     category: options.category || target.category,
-    tags: options.tags || target.tags,
-    paused: options.paused ?? target.paused,
-    sequential: options.sequential ?? target.sequential,
-    firstLastPiece: options.firstLastPiece ?? target.firstLastPiece,
-    headers: { ...normalized.headers, ...(options.headers || {}) },
+    tags: toList(options.tags ?? target.tags),
+    paused: toBool(options.paused, target.paused),
+    sequential: toBool(options.sequential, target.sequential),
+    firstLastPiece: toBool(options.firstLastPiece, target.firstLastPiece),
+    headers: { ...normalized.headers, ...normalizeHeaders(options.headers) },
     meta: {
       movieSlug: normalized.movieSlug,
       movieTitle: normalized.movieTitle,

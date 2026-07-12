@@ -155,11 +155,11 @@ export function readSourceGroups(data, movie = {}) {
     return groups;
   }
   if (!data || typeof data !== 'object') return groups;
-  addGroup(groups, 'Online', collectArrays(data, 'online', 'play', 'playlist', 'episodes', 'items'), movie);
+  addGroup(groups, 'Online', collectArrays(data, 'online', 'play', 'playlist', 'episodes', 'items', 'resources', 'urls', 'links', 'list'), movie);
   addGroup(groups, 'Download', collectArrays(data, 'download', 'downloads', 'down'), movie);
   addGroup(groups, 'Cloud Drive', collectArrays(data, 'cloud', 'netdisk', 'drive', 'shares'), movie);
   addGroup(groups, 'Magnet', collectArrays(data, 'magnet', 'magnets', 'bt'), movie);
-  const used = new Set(['online', 'play', 'playlist', 'episodes', 'items', 'download', 'downloads', 'down', 'cloud', 'netdisk', 'drive', 'shares', 'magnet', 'magnets', 'bt']);
+  const used = new Set(['online', 'play', 'playlist', 'episodes', 'items', 'resources', 'urls', 'links', 'list', 'download', 'downloads', 'down', 'cloud', 'netdisk', 'drive', 'shares', 'magnet', 'magnets', 'bt']);
   for (const [key, value] of Object.entries(data)) {
     if (!used.has(key.toLowerCase()) && Array.isArray(value)) addGroup(groups, readableGroupName(key), value, movie);
   }
@@ -167,13 +167,13 @@ export function readSourceGroups(data, movie = {}) {
 }
 
 function readMovieList(root, settings) {
-  const data = unwrapData(root);
+  const data = arrayData(unwrapData(root), 'items', 'results', 'movies', 'records', 'list', 'data');
   if (!Array.isArray(data)) return [];
   return data.map((item) => readMovie(item, settings)).filter((item) => item.slug && item.title);
 }
 
 function readPagedMovies(root, settings) {
-  const data = unwrapData(root);
+  const data = arrayData(unwrapData(root), 'items', 'results', 'movies', 'records', 'list', 'data');
   const movies = Array.isArray(data) ? readMovieList(root, settings) : [];
   const meta = root && typeof root === 'object' ? root.meta || root.pagination || {} : {};
   return {
@@ -198,13 +198,23 @@ function readRelated(data, settings) {
 }
 
 function addGroup(groups, name, elements, movie) {
-  const items = Array.from(elements || []).map((element, index) => normalizeResource(element, {
-    slug: movie.slug,
-    title: movie.title,
-    groupName: name,
-    index
-  })).filter((item) => item.url);
-  if (items.length > 0) groups.push({ name, items });
+  const directItems = [];
+  for (const [index, element] of Array.from(elements || []).entries()) {
+    if (isNestedResourceGroup(element)) {
+      for (const [nestedName, nestedItems] of nestedResourceArrays(element)) {
+        addGroup(groups, nestedName || name, nestedItems, movie);
+      }
+      continue;
+    }
+    const item = normalizeResource(element, {
+      slug: movie.slug,
+      title: movie.title,
+      groupName: name,
+      index
+    });
+    if (item.url) directItems.push(item);
+  }
+  if (directItems.length > 0) groups.push({ name, items: directItems });
 }
 
 function buildUrl(base, path, query) {
@@ -274,6 +284,35 @@ function collectArrays(element, ...keys) {
   for (const key of keys) {
     const value = firstValue(element, key);
     if (Array.isArray(value)) out.push(...value);
+  }
+  return out;
+}
+
+function arrayData(value, ...keys) {
+  if (Array.isArray(value)) return value;
+  if (!value || typeof value !== 'object') return [];
+  for (const key of keys) {
+    const nested = firstValue(value, key);
+    if (Array.isArray(nested)) return nested;
+  }
+  return [];
+}
+
+function isNestedResourceGroup(element) {
+  if (!element || typeof element !== 'object' || Array.isArray(element)) return false;
+  if (firstString(element, 'url', 'link', 'href', 'src', 'value', 'file', 'path', 'play_url', 'download_url', 'magnet', 'ed2k')) return false;
+  return nestedResourceArrays(element).length > 0;
+}
+
+function nestedResourceArrays(element) {
+  const names = ['items', 'resources', 'episodes', 'list', 'urls', 'links', 'playlist', 'play', 'online', 'download', 'downloads', 'magnets', 'magnet', 'cloud', 'netdisk', 'drive'];
+  const out = [];
+  for (const name of names) {
+    const value = firstValue(element, name);
+    if (Array.isArray(value)) {
+      const groupName = firstString(element, 'name', 'title', 'label', 'source', 'line', 'group') || readableGroupName(name);
+      out.push([groupName, value]);
+    }
   }
   return out;
 }

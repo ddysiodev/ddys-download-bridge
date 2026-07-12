@@ -1,4 +1,4 @@
-import { basicAuth, createTimeoutFetch, readJsonResponse, splitIds } from './common.mjs';
+import { basicAuth, boolOption, createTimeoutFetch, readJsonResponse, splitIds } from './common.mjs';
 
 const PROVIDER = 'transmission';
 
@@ -66,7 +66,7 @@ export function createTransmissionAdapter(target, runtime = {}) {
   }
 
   async function remove(ids, options = {}, signal) {
-    await call('torrent-remove', { ids: splitIds(ids), 'delete-local-data': Boolean(options.deleteFiles || target.deleteFiles) }, signal);
+    await call('torrent-remove', { ids: splitIds(ids), 'delete-local-data': boolOption(options.deleteFiles, target.deleteFiles) }, signal);
     return { ok: true, provider: PROVIDER, ids: splitIds(ids) };
   }
 
