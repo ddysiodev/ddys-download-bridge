@@ -1,0 +1,40 @@
+{
+  "name": "ddys-download-bridge",
+  "version": "0.1.0",
+  "description": "Download bridge for pushing DDYS resources to qBittorrent, aria2, Transmission, and Synology Download Station.",
+  "type": "module",
+  "private": true,
+  "bin": {
+    "ddys-download-bridge": "./cli/ddys-download-bridge.mjs"
+  },
+  "types": "./index.d.ts",
+  "exports": {
+    ".": "./src/index.mjs",
+    "./bridge": "./src/core/bridge.mjs",
+    "./client": "./src/core/client.mjs",
+    "./resources": "./src/core/resources.mjs",
+    "./adapters": "./src/adapters/index.mjs"
+  },
+  "scripts": {
+    "start": "node src/server.mjs",
+    "serve": "node cli/ddys-download-bridge.mjs serve",
+    "check": "node tools/check.mjs",
+    "test": "node tests/run.mjs",
+    "package": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/build-package.ps1"
+  },
+  "keywords": [
+    "ddys",
+    "download",
+    "qbittorrent",
+    "aria2",
+    "transmission",
+    "synology",
+    "nas",
+    "magnet",
+    "torrent"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

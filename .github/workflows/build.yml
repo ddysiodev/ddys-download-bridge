@@ -1,0 +1,25 @@
+name: build
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: node --check cli/ddys-download-bridge.mjs
+      - run: node --check src/server.mjs
+      - run: node tools/check.mjs
+      - run: node tests/run.mjs
+      - run: pwsh -NoProfile -ExecutionPolicy Bypass -File tools/build-package.ps1
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ddys-download-bridge-v0.1.0
+          path: |
+            releases/ddys-download-bridge-v0.1.0.zip
+            releases/ddys-download-bridge-v0.1.0.zip.sha256

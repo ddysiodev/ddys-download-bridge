@@ -1,0 +1,41 @@
+{
+  "apiBase": "https://ddys.io/api/v1",
+  "siteBase": "https://ddys.io",
+  "target": "aria2",
+  "authToken": "change-me",
+  "directOnly": false,
+  "includeUnsupported": false,
+  "targets": {
+    "aria2": {
+      "provider": "aria2",
+      "baseUrl": "http://127.0.0.1:6800/jsonrpc",
+      "secret": "",
+      "savePath": "/downloads/ddys",
+      "tags": ["ddys"]
+    },
+    "qb": {
+      "provider": "qbittorrent",
+      "baseUrl": "http://127.0.0.1:8080",
+      "username": "admin",
+      "password": "adminadmin",
+      "savePath": "/downloads/ddys",
+      "category": "ddys",
+      "tags": ["ddys"]
+    },
+    "tr": {
+      "provider": "transmission",
+      "baseUrl": "http://127.0.0.1:9091/transmission/rpc",
+      "username": "transmission",
+      "password": "secret",
+      "savePath": "/downloads/ddys",
+      "tags": ["ddys"]
+    },
+    "synology": {
+      "provider": "synology",
+      "baseUrl": "http://nas.local:5000/webapi",
+      "username": "admin",
+      "password": "secret",
+      "savePath": "video/ddys"
+    }
+  }
+}

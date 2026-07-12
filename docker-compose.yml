@@ -1,0 +1,15 @@
+services:
+  ddys-download-bridge:
+    image: node:20-alpine
+    working_dir: /app
+    command: node src/server.mjs
+    ports:
+      - "8788:8788"
+    volumes:
+      - ./:/app:ro
+    environment:
+      DDYS_DOWNLOAD_PROVIDER: aria2
+      DDYS_DOWNLOAD_BASE_URL: http://aria2:6800/jsonrpc
+      DDYS_BRIDGE_HOST: 0.0.0.0
+      DDYS_BRIDGE_PORT: 8788
+      DDYS_BRIDGE_TOKEN: change-me
