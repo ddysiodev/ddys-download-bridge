@@ -87,8 +87,23 @@ if (Test-Path -LiteralPath $ShaFile) {
     Remove-Item -LiteralPath $ShaFile -Force
 }
 
-$packageItems = Get-ChildItem -LiteralPath $PackageDir -Force
-Compress-Archive -Path $packageItems.FullName -DestinationPath $Zip -Force
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$archive = [System.IO.Compression.ZipFile]::Open($Zip, [System.IO.Compression.ZipArchiveMode]::Create)
+try {
+    $packageFiles = Get-ChildItem -LiteralPath $PackageDir -Recurse -Force -File
+    foreach ($file in $packageFiles) {
+        $relative = (Get-RelativePathCompat -Base $PackageDir -Path $file.FullName).Replace("\", "/")
+        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile(
+            $archive,
+            $file.FullName,
+            $relative,
+            [System.IO.Compression.CompressionLevel]::Optimal
+        ) | Out-Null
+    }
+} finally {
+    $archive.Dispose()
+}
 $Hash = (Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash
 Set-Content -LiteralPath $ShaFile -Value "$Hash  $(Split-Path -Leaf $Zip)" -Encoding ASCII
 
