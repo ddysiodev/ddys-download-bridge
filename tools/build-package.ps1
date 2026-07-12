@@ -28,7 +28,8 @@ function Assert-InRoot {
     )
 
     $full = [System.IO.Path]::GetFullPath($Path)
-    $baseFull = [System.IO.Path]::GetFullPath($Base).TrimEnd("\") + "\"
+    $separator = [System.IO.Path]::DirectorySeparatorChar
+    $baseFull = [System.IO.Path]::GetFullPath($Base).TrimEnd([char[]]@("\", "/")) + $separator
     if (-not $full.StartsWith($baseFull, [System.StringComparison]::OrdinalIgnoreCase)) {
         throw "Refusing to operate outside project root: $full"
     }
@@ -40,10 +41,11 @@ function Get-RelativePathCompat {
         [Parameter(Mandatory = $true)][string]$Path
     )
 
-    $basePath = [System.IO.Path]::GetFullPath($Base).TrimEnd("\") + "\"
+    $separator = [System.IO.Path]::DirectorySeparatorChar
+    $basePath = [System.IO.Path]::GetFullPath($Base).TrimEnd([char[]]@("\", "/")) + $separator
     $baseUri = New-Object System.Uri($basePath)
     $fileUri = New-Object System.Uri([System.IO.Path]::GetFullPath($Path))
-    return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($fileUri).ToString()).Replace("/", "\")
+    return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($fileUri).ToString()).Replace("/", $separator)
 }
 
 Assert-InRoot -Path $PackageDir -Base $Root
