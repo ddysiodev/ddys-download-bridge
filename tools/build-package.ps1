@@ -87,7 +87,8 @@ if (Test-Path -LiteralPath $ShaFile) {
     Remove-Item -LiteralPath $ShaFile -Force
 }
 
-Compress-Archive -Path (Join-Path $PackageDir "*") -DestinationPath $Zip -Force
+$packageItems = Get-ChildItem -LiteralPath $PackageDir -Force
+Compress-Archive -Path $packageItems.FullName -DestinationPath $Zip -Force
 $Hash = (Get-FileHash -LiteralPath $Zip -Algorithm SHA256).Hash
 Set-Content -LiteralPath $ShaFile -Value "$Hash  $(Split-Path -Leaf $Zip)" -Encoding ASCII
 
